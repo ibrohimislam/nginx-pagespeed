@@ -2,15 +2,10 @@ FROM alpine:3.4
 
 MAINTAINER habibiefaried@gmail.com
 
-#Default Config, just change this
-ENV MYSQL_ROOT_PASSWORD=admin2017!
-ENV PHPMYADMIN_DIR=secretmysql
-ENV PHPREDISADMIN_DIR=secretredis
-
 ENV NGINX_VERSION=1.11.2 \
      PAGESPEED_VERSION=1.11.33.4 \
      LIBPNG_VERSION=1.2.56 \
-     MAKE_J=4 \
+     MAKE_J=7 \
      PAGESPEED_ENABLE=on
 
 RUN apk upgrade --no-cache --update && \
@@ -26,10 +21,10 @@ RUN apk upgrade --no-cache --update && \
         openssl \
         pcre \
         zlib \
-        git mysql mysql-client nano
+        git \
+        vim
 
 RUN cd /root && git clone https://github.com/vozlt/nginx-module-vts.git && cd /
-RUN adduser -D websrv && adduser -D phpfpm
 
 RUN git clone https://github.com/nbs-system/naxsi.git "/root/nginx-naxsi"
 
@@ -72,17 +67,17 @@ RUN set -x && \
     make -j${MAKE_J} BUILDTYPE=Release CXXFLAGS=" -I/usr/include/apr-1 -I/tmp/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" CFLAGS=" -I/usr/include/apr-1 -I/tmp/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" && \
     cd /tmp/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/ && \
     make -j${MAKE_J} psol BUILDTYPE=Release CXXFLAGS=" -I/usr/include/apr-1 -I/tmp/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" CFLAGS=" -I/usr/include/apr-1 -I/tmp/libpng-${LIBPNG_VERSION} -fPIC -D_GLIBCXX_USE_CXX11_ABI=0" && \
-    mkdir -p /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol && \
-    mkdir -p /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 && \
-    mkdir -p /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/out/Release/obj /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/out/Release/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/net /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/testing /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/third_party /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/tools /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/url /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/include/ && \
-    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/pagespeed_automatic.a /tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 && \
+    mkdir -p /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol && \
+    mkdir -p /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 && \
+    mkdir -p /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/out/Release && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/out/Release/obj /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/out/Release/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/net /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/testing /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/third_party /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/tools /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/url /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/include/ && \
+    cp -r /tmp/modpagespeed-${PAGESPEED_VERSION}/src/pagespeed/automatic/pagespeed_automatic.a /tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta/psol/lib/Release/linux/x64 && \
     # Build Nginx with support for PageSpeed
     cd /tmp && \
     curl -L http://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -zx && \
@@ -122,7 +117,7 @@ RUN set -x && \
         --http-log-path=/var/log/nginx/access.log \
         --error-log-path=/var/log/nginx/error.log \
         --pid-path=/var/run/nginx.pid \
-        --add-module=/tmp/ngx_pagespeed-${PAGESPEED_VERSION}-beta \
+        --add-module=/tmp/incubator-pagespeed-ngx-${PAGESPEED_VERSION}-beta \
         --add-module=/root/nginx-module-vts \
         --add-module="/root/nginx-naxsi/naxsi_src" \
         --with-cc-opt="-fPIC -I /usr/include/apr-1" \
@@ -141,99 +136,14 @@ RUN set -x && \
     && rm -rf /etc/nginx/html/ \
     && mkdir -p /usr/share/nginx/html/ 
 
-##Instal php5-fpm
-RUN apk add --update \
-		php5-mcrypt \
-		php5-soap \
-		php5-openssl \
-		php5-gmp \
-		php5-pdo_odbc \
-		php5-json \
-		php5-dom \
-		php5-pdo \
-		php5-zip \
-		php5-mysql \
-        php5-mysqli \
-		php5-sqlite3 \
-		php5-apcu \
-		php5-intl \
-		php5-imagick \
-		php5-pdo_pgsql \
-		php5-pgsql \
-		php5-bcmath \
-		php5-gd \
-		php5-xcache \
-		php5-mcrypt \
-		php5-ldap \
-		php5-odbc \
-		php5-pdo_mysql \
-		php5-pdo_sqlite \
-		php5-gettext \
-		php5-xmlreader \
-		php5-xmlrpc \
-		php5-bz2 \
-		php5-memcache \
-		php5-mssql \
-		php5-iconv \
-		php5-pdo_dblib \
-		php5-curl \
-		php5-ctype \
-		php5-dev \  
-		php5-common \
-		php5-pear \
-		php5-xml \
-		php5-wddx \
-		php5-xsl \
-		php5-ftp \
-		php5-phar \
-		php5-posix \
-		php5-shmop \
-		php5-soap \
-		php5-sockets \
-		php5-sqlite3 \
-		php5-zlib \
-		php5-phpmailer \
-		php5-zip \
-		php5-exif \
-		php5-phpdbg \
-		php5-opcache \
-		php5-fpm
-
-
-##PECL
-RUN apk add --no-cache bash build-base wget curl m4 autoconf libtool imagemagick imagemagick-dev zlib zlib-dev libcurl curl-dev libevent libevent-dev libidn libmemcached libmemcached-dev libidn-dev && curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-RUN sed -i "$ s|\-n||g" /usr/bin/pecl
-RUN echo "extension=iconv.so" >> /etc/php5/php.ini
-RUN printf "\n" | pecl install raphf-1.1.2 propro-1.0.2 
-RUN echo "extension=raphf.so" >> /etc/php5/php.ini
-RUN echo "extension=propro.so" >> /etc/php5/php.ini
-RUN printf "\n" | pecl install pecl_http-2.5.6
-RUN echo "extension=http.so" >> /etc/php5/php.ini
-RUN printf "\n" | pecl install redis
-
 COPY config/conf.d /etc/nginx/conf.d
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY html /usr/share/nginx/html
 COPY config/naxsi /etc/nginx/naxsi
-COPY init.sh /init.sh
-RUN chmod +x /init.sh
-VOLUME ["/var/cache/ngx_pagespeed","/app"]
-COPY my.cnf /etc/mysql/my.cnf
+VOLUME ["/var/cache/ngx_pagespeed","/var/www"]
 
-COPY php-fpm.conf /etc/php5/php-fpm.conf
-COPY php.ini /etc/php5/php.ini
 RUN chmod -R 777 /var/log/
+RUN adduser -D nginx
 
-RUN echo "export TERM=xterm" > /root/.bashrc
-RUN echo 'PS1="\[\033[35m\]\t\[\033[m\]-\[\033[36m\]\u\[\033[m\]@\[\033[32m\]\h:\[\033[33;1m\]\w\[\033[m\]\$ "' >> /root/.bashrc
-
-WORKDIR /tmp
-RUN apk add --update redis
-RUN wget https://files.phpmyadmin.net/phpMyAdmin/4.6.6/phpMyAdmin-4.6.6-all-languages.zip && unzip phpMyAdmin-4.6.6-all-languages.zip
-RUN mv phpMyAdmin-4.6.6-all-languages /usr/share/nginx/html/$PHPMYADMIN_DIR
-RUN git clone https://github.com/ErikDubbelboer/phpRedisAdmin.git && cd phpRedisAdmin && git submodule init && git submodule update && cd ..
-RUN mv phpRedisAdmin /usr/share/nginx/html/$PHPREDISADMIN_DIR
-
-RUN cd /usr/share/nginx/html/$PHPREDISADMIN_DIR && composer install
 WORKDIR /root
-CMD ["/init.sh"]
+CMD ["nginx", "-g", "daemon off;"]
